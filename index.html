@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ops Phone Team Dashboard</title>
+    <title>Ops Team Performance Dashboard & Agent Ranking</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         * {
@@ -11,589 +11,471 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
             max-width: 1400px;
             margin: 0 auto;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
-
-        .header {
+        .container {
             background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
             margin-bottom: 30px;
         }
-
+        .title-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
         h1 {
-            color: #333;
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            color: #2d3748;
+            font-size: 2em;
+            font-weight: 600;
         }
-
-        .subtitle {
-            color: #666;
-            font-size: 1.1em;
-        }
-
         .ranking-logic {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 30px;
             font-size: 0.85em;
-            color: #555;
+            color: #4a5568;
+        }
+        .ranking-logic h3 {
+            margin: 0 0 12px 0;
+            font-size: 1.1em;
+            color: #5a67d8;
+            font-weight: 600;
+        }
+        .ranking-logic p {
+            margin: 0 0 12px 0;
             line-height: 1.6;
         }
-
-        .ranking-logic h3 {
-            font-size: 1em;
-            margin-bottom: 10px;
-            color: #667eea;
+        .ranking-logic strong {
+            color: #2d3748;
+            font-weight: 600;
         }
-
         .ranking-logic ol {
-            margin: 0;
-            padding-left: 20px;
+            margin: 5px 0 0 20px;
+            padding: 0;
+            line-height: 1.8;
         }
-
-        .ranking-logic li {
-            margin-bottom: 5px;
+        .ranking-logic ol li strong {
+            color: #4a5568;
+            font-weight: 600;
         }
-
         .upload-section {
-            background: white;
+            background: #f7fafc;
             padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-bottom: 30px;
+            border-radius: 12px;
             text-align: center;
+            margin-bottom: 30px;
+            border: 2px dashed #cbd5e0;
+            transition: all 0.3s ease;
         }
-
+        .upload-section:hover {
+            border-color: #667eea;
+            background: #edf2f7;
+        }
         .upload-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 15px 40px;
+            padding: 14px 32px;
             border: none;
-            border-radius: 50px;
-            font-size: 1.1em;
+            border-radius: 8px;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            display: inline-block;
-            margin: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
-
         .upload-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         }
-
         input[type="file"] {
             display: none;
         }
-
-        .table-container {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            overflow-x: auto;
+        .dashboard {
+            display: none;
         }
-
+        .dashboard.active {
+            display: block;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
+            background: white;
         }
-
-        th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px;
+        th, td {
+            padding: 14px 12px;
             text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background: #f7fafc;
             font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 10;
+            color: #2d3748;
+            text-transform: uppercase;
+            font-size: 0.75em;
+            letter-spacing: 0.5px;
         }
-
-        td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-        }
-
         tr:hover {
-            background: #f5f5f5;
+            background-color: #f7fafc;
         }
-
-        .file-info {
-            background: #f0f0f0;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 15px;
-            display: none;
-        }
-
-        .clear-btn {
-            background: #e74c3c;
-            color: white;
-            padding: 10px 25px;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            margin-left: 10px;
-        }
-
-        .clear-btn:hover {
-            background: #c0392b;
+        .total-score {
+            color: #718096;
+            font-size: 0.9em;
+            font-weight: 500;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📞 Ops Phone Team Dashboard</h1>
-            <p class="subtitle">Scores Table</p>
-            
-            <div class="ranking-logic">
-                <h3>Ranking Logic</h3>
-                <p style="margin-bottom: 10px; font-style: italic;">
-                    <strong>Note:</strong> Rankings prioritize <strong>balanced performance</strong> (hitting all targets) over total weighted score. 
-                    An agent with fewer failed grades ranks higher even if their total weighted score is lower, 
-                    because consistent performance across all metrics is more valuable than excelling in some areas while failing in others.
-                </p>
-                <ol>
-                    <li><strong>Agents with 4+ grey scores</strong> rank at the bottom, sorted by Total Weight (higher = better rank)</li>
-                    <li><strong>Fewer failed grades</strong> (red + yellow) rank higher</li>
-                    <li><strong>Fewer red grades</strong> rank higher (among same failed count)</li>
-                    <li><strong>More supergreen grades</strong> rank higher (among same red count)</li>
-                    <li><strong>Higher Total Weight</strong> ranks higher (final tie-breaker when color distribution is equal)</li>
-                </ol>
+            <div class="title-wrapper">
+                <div class="icon">📊</div>
+                <h1>Ops Team Performance Dashboard & Agent Ranking</h1>
             </div>
         </div>
-
+        
+        <div class="ranking-logic">
+            <h3>Ranking Logic</h3>
+            <p><strong>Note:</strong> Rankings prioritize <strong>balanced performance</strong> (hitting all targets) over total weighted score. An agent with <strong>fewer failed grades</strong> ranks higher even if their total weighted score is lower, because <strong>consistent performance across all metrics</strong> is more valuable than excelling in some areas while failing in others.</p>
+            <ol>
+                <li>Agents with <strong>3+ grey scores</strong> rank at the bottom, sorted by Total Weight (higher = better rank)</li>
+                <li><strong>Fewer failed grades</strong> (red + yellow) rank higher</li>
+                <li><strong>Fewer red grades</strong> rank higher (among same failed count)</li>
+                <li><strong>More supergreen grades</strong> rank higher (among same red count)</li>
+                <li><strong>Higher Total Weight</strong> ranks higher (final tie-breaker when color distribution is equal)</li>
+            </ol>
+        </div>
+        
         <div class="upload-section">
-            <h2 style="margin-bottom: 20px;">Upload CSV File</h2>
-            <label for="csvFile" class="upload-btn">
-                📁 Choose CSV File
-            </label>
             <input type="file" id="csvFile" accept=".csv">
-            <button class="clear-btn" onclick="clearData()">Clear Data</button>
-            <div class="file-info" id="fileInfo"></div>
+            <label for="csvFile" class="upload-btn">Upload CSV File</label>
         </div>
 
-        <div class="table-container">
-            <table id="scoresTable">
-                <thead id="tableHead">
+        <div class="dashboard" id="dashboard">
+            <table id="dataTable">
+                <thead>
+                    <tr id="tableHeader"></tr>
                 </thead>
-                <tbody id="tableBody">
-                    <tr>
-                        <td style="text-align: center; padding: 30px; color: #999;">
-                            No data available. Please upload a CSV file.
-                        </td>
-                    </tr>
-                </tbody>
+                <tbody id="tableBody"></tbody>
             </table>
         </div>
     </div>
 
     <script>
-        let scoresData = [];
-
         document.getElementById('csvFile').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                document.getElementById('fileInfo').style.display = 'block';
-                document.getElementById('fileInfo').innerHTML = `<strong>Loading:</strong> ${file.name}...`;
-                
                 Papa.parse(file, {
                     header: true,
-                    dynamicTyping: false,
+                    dynamicTyping: true,
                     skipEmptyLines: true,
                     complete: function(results) {
-                        scoresData = results.data;
-                        document.getElementById('fileInfo').innerHTML = `<strong>Loaded:</strong> ${file.name} (${scoresData.length} records)`;
-                        processData();
-                    },
-                    error: function(error) {
-                        document.getElementById('fileInfo').innerHTML = `<strong>Error:</strong> ${error.message}`;
+                        displayTable(results.data);
                     }
                 });
             }
         });
 
-        function processData() {
-            if (scoresData.length === 0) return;
+        function displayTable(data) {
+            if (data.length === 0) return;
 
-            // Remove duplicate rows based on agent name - keep only first occurrence
-            const uniqueData = [];
-            const seenAgents = new Set();
+            const allHeaders = Object.keys(data[0]);
+            const headers = allHeaders.filter(h => 
+                !h.toLowerCase().includes('color') && 
+                !h.toLowerCase().includes('count_aws')
+            );
             
-            for (let i = 0; i < scoresData.length; i++) {
-                const row = scoresData[i];
-                // Look for agent name in various possible column names
-                const agentName = row.Agent || row.agent || row.AGENT || 
-                                 row['Agent Name'] || row['agent name'] || row['AGENT NAME'] ||
-                                 row.Name || row.name || row.NAME;
-                
-                if (agentName && !seenAgents.has(agentName)) {
-                    seenAgents.add(agentName);
-                    uniqueData.push(row);
-                } else if (!agentName) {
-                    // If no agent name found, include the row anyway
-                    uniqueData.push(row);
-                }
-            }
-            
-            scoresData = uniqueData;
-
-            const allColumns = Object.keys(scoresData[0]);
-            
-            // Calculate new Upsell % Transferred column for each row
-            scoresData.forEach(row => {
-                const transferred = parseFloat(row.count_aws_calls_transfered_to_sales || 0);
-                const handled = parseFloat(row['count_aws_calls_handled_customer_tier1&2'] || 0);
-                
-                if (handled > 0) {
-                    row['Upsell % Transferred'] = ((transferred / handled) * 100).toFixed(2) + '%';
-                } else {
-                    row['Upsell % Transferred'] = '0%';
-                }
-                
-                // Copy color from old column if it exists
-                if (row['Upsell % Transferred (Tier II) COLOR']) {
-                    row['Upsell % Transferred COLOR'] = row['Upsell % Transferred (Tier II) COLOR'];
+            // Create a map of metric columns to their color columns
+            const colorMap = {};
+            allHeaders.forEach(header => {
+                if (header.toLowerCase().includes('color')) {
+                    // Find the corresponding metric column
+                    const metricName = header.replace(/color/gi, '').trim();
+                    const matchingMetric = headers.find(h => h.includes(metricName) || metricName.includes(h));
+                    if (matchingMetric) {
+                        colorMap[matchingMetric] = header;
+                    }
                 }
             });
+
+            const agentNameHeader = headers.find(h => h.toLowerCase().includes('agent') && h.toLowerCase().includes('name'));
+            const otherHeaders = headers.filter(h => h !== agentNameHeader && !h.includes('Weighted Score'));
+            const orderedHeaders = agentNameHeader ? ['Rank', agentNameHeader, 'Total Weighted Score', ...otherHeaders] : headers;
+
+            const seenAgents = new Set();
+            const uniqueData = data.filter(row => {
+                const agentName = row[agentNameHeader];
+                if (seenAgents.has(agentName)) {
+                    return false;
+                }
+                seenAgents.add(agentName);
+                return true;
+            });
+
+            uniqueData.forEach(row => {
+                const tier2Denominator = row['count_aws_calls_handled_customer_tier1&2'];
+                const tier3Denominator = row['count_aws_calls_handled_customer_tier3'];
+                const numerator = row['count_aws_calls_transfered_to_sales'];
+
+                if (numerator !== null && numerator !== undefined && tier2Denominator && tier2Denominator !== 0) {
+                    row['Upsell % Transferred (Tier II)'] = ((numerator / tier2Denominator) * 100).toFixed(2) + '%';
+                }
+
+                if (numerator !== null && numerator !== undefined && tier3Denominator && tier3Denominator !== 0) {
+                    row['Upsell % Transferred (Tier III)'] = ((numerator / tier3Denominator) * 100).toFixed(2) + '%';
+                }
+            });
+
+            // Calculate standardized scores
+            const excludedColumns = [
+                'count_aws_calls_transfered_to_sales',
+                'count_aws_calls_handled_customer_tier1&2',
+                'count_aws_calls_handled_customer_tier3'
+            ];
             
-            // Calculate rankings based on color grades
-            scoresData.forEach(row => {
+            // Find all columns that should be metrics (excluding agent name and excluded columns)
+            const allColumns = Object.keys(uniqueData[0] || {});
+            const metricColumns = allColumns.filter(col => 
+                col !== agentNameHeader && 
+                !excludedColumns.includes(col) &&
+                !col.toLowerCase().includes('color') &&
+                !col.startsWith('__')
+            );
+            
+            // Determine direction for each metric (higher or lower is better)
+            const lowerIsBetter = ['AHT', 'C/R', 'Handle Time', 'Response Time'];
+            const metricsToStandardize = {};
+            
+            metricColumns.forEach(col => {
+                const isLower = lowerIsBetter.some(keyword => col.includes(keyword));
+                metricsToStandardize[col] = isLower ? 'lower' : 'higher';
+            });
+
+            // Convert Phone AHT from mm:ss to seconds
+            uniqueData.forEach(row => {
+                if (row['Phone AHT'] && typeof row['Phone AHT'] === 'string') {
+                    const parts = row['Phone AHT'].split(':');
+                    if (parts.length === 2) {
+                        const minutes = parseInt(parts[0]) || 0;
+                        const seconds = parseInt(parts[1]) || 0;
+                        row['__Phone_AHT_Seconds__'] = minutes * 60 + seconds;
+                    }
+                }
+                
+                // Convert Chat AHT from mm:ss to seconds if present
+                if (row['Chat AHT'] && typeof row['Chat AHT'] === 'string') {
+                    const parts = row['Chat AHT'].split(':');
+                    if (parts.length === 2) {
+                        const minutes = parseInt(parts[0]) || 0;
+                        const seconds = parseInt(parts[1]) || 0;
+                        row['__Chat_AHT_Seconds__'] = minutes * 60 + seconds;
+                    }
+                }
+                
+                // Remove $ and % from numeric values
+                metricColumns.forEach(col => {
+                    if (row[col] && typeof row[col] === 'string') {
+                        const cleaned = row[col].replace(/[$,%]/g, '');
+                        const value = parseFloat(cleaned);
+                        if (!isNaN(value)) {
+                            row[`__${col}_Numeric__`] = value;
+                        }
+                    }
+                });
+            });
+
+            const standardizedScores = {};
+            
+            Object.keys(metricsToStandardize).forEach(metric => {
+                let values;
+                let dataKey = metric;
+                
+                if (metric === 'Phone AHT') {
+                    dataKey = '__Phone_AHT_Seconds__';
+                } else if (metric === 'Chat AHT') {
+                    dataKey = '__Chat_AHT_Seconds__';
+                } else if (uniqueData[0] && uniqueData[0][`__${metric}_Numeric__`] !== undefined) {
+                    dataKey = `__${metric}_Numeric__`;
+                }
+                
+                values = uniqueData.map(row => {
+                    const val = row[dataKey];
+                    return typeof val === 'number' && !isNaN(val) ? val : null;
+                }).filter(v => v !== null);
+                
+                if (values.length > 0) {
+                    const min = Math.min(...values);
+                    const max = Math.max(...values);
+                    const range = max - min;
+
+                    standardizedScores[metric] = uniqueData.map(row => {
+                        const val = row[dataKey];
+                        if (typeof val !== 'number' || isNaN(val) || range === 0) return null;
+                        
+                        if (metricsToStandardize[metric] === 'higher') {
+                            return ((val - min) / range) * 100;
+                        } else {
+                            return ((max - val) / range) * 100;
+                        }
+                    });
+                }
+            });
+
+            // Calculate weighted scores for each metric and total score
+            uniqueData.forEach((row, idx) => {
+                let totalScore = 0;
+                let validMetrics = 0;
+                
+                Object.keys(metricsToStandardize).forEach(metric => {
+                    if (standardizedScores[metric] && standardizedScores[metric][idx] !== null) {
+                        const score = standardizedScores[metric][idx];
+                        row[`${metric} - Weighted Score`] = score.toFixed(2);
+                        totalScore += score;
+                        validMetrics++;
+                    }
+                });
+                
+                row['__totalWeightedScore__'] = validMetrics > 0 ? (totalScore / validMetrics).toFixed(2) : null;
+                
+                // Count colors for ranking
+                let greyCount = 0;
                 let redCount = 0;
                 let yellowCount = 0;
                 let superGreenCount = 0;
-                let greyCount = 0;
                 
-                // Count color grades for each agent
-                Object.keys(row).forEach(key => {
-                    if (key.toLowerCase().includes('color')) {
-                        const color = (row[key] || '').toLowerCase().trim();
-                        if (color === 'red') redCount++;
-                        else if (color === 'yellow') yellowCount++;
-                        else if (color === 'supergreen' || color === 'super green') superGreenCount++;
-                        else if (color === 'grey' || color === 'gray') greyCount++;
-                    }
+                Object.keys(colorMap).forEach(metric => {
+                    const colorCol = colorMap[metric];
+                    const color = row[colorCol] ? row[colorCol].toLowerCase() : '';
+                    
+                    if (color === 'grey' || color === 'gray') greyCount++;
+                    if (color === 'red') redCount++;
+                    if (color === 'yellow') yellowCount++;
+                    if (color === 'super green') superGreenCount++;
                 });
                 
-                row._redCount = redCount;
-                row._yellowCount = yellowCount;
-                row._failedCount = redCount + yellowCount;
-                row._superGreenCount = superGreenCount;
-                row._greyCount = greyCount;
+                row['__greyCount__'] = greyCount;
+                row['__redCount__'] = redCount;
+                row['__yellowCount__'] = yellowCount;
+                row['__failedCount__'] = redCount + yellowCount;
+                row['__superGreenCount__'] = superGreenCount;
             });
             
-            // Calculate Total Weight
-            // First, find min and max for normalization (excluding grey/blank scores)
-            const scoreColumns = [
-                'Solved Tickets Per Hour',
-                'Utilization %',
-                'Phone AHT',
-                'Overall CSAT %',
-                'Overall QA',
-                'Schedule Adherence',
-                'Net C/R per Ticket',
-                'Upsell % Transferred',
-                '1on1 %'
-            ];
-            
-            const minMax = {};
-            scoreColumns.forEach(col => {
-                const values = [];
-                scoresData.forEach(row => {
-                    const colorCol = col + ' COLOR';
-                    const color = (row[colorCol] || '').toLowerCase().trim();
-                    
-                    // Only include non-grey, non-blank scores
-                    if (color !== 'grey' && color !== 'gray' && color !== '') {
-                        const val = parseFloat((row[col] || '').toString().replace('%', ''));
-                        if (!isNaN(val)) {
-                            values.push(val);
-                        }
-                    }
-                });
+            // Sort agents by ranking criteria
+            uniqueData.sort((a, b) => {
+                const aGrey = a['__greyCount__'] || 0;
+                const bGrey = b['__greyCount__'] || 0;
+                const aFailed = a['__failedCount__'] || 0;
+                const bFailed = b['__failedCount__'] || 0;
+                const aRed = a['__redCount__'] || 0;
+                const bRed = b['__redCount__'] || 0;
+                const aSuperGreen = a['__superGreenCount__'] || 0;
+                const bSuperGreen = b['__superGreenCount__'] || 0;
+                const aTotal = parseFloat(a['__totalWeightedScore__']) || 0;
+                const bTotal = parseFloat(b['__totalWeightedScore__']) || 0;
                 
-                if (values.length > 0) {
-                    minMax[col] = {
-                        min: Math.min(...values),
-                        max: Math.max(...values)
-                    };
+                // 1. Agents with 3+ grey at bottom
+                const aHasMany3Grey = aGrey >= 3;
+                const bHasMany3Grey = bGrey >= 3;
+                
+                if (aHasMany3Grey !== bHasMany3Grey) {
+                    return aHasMany3Grey ? 1 : -1;
                 }
+                
+                // If both have 3+ grey, sort by total weight
+                if (aHasMany3Grey && bHasMany3Grey) {
+                    return bTotal - aTotal;
+                }
+                
+                // 2. Fewer failed grades rank higher
+                if (aFailed !== bFailed) {
+                    return aFailed - bFailed;
+                }
+                
+                // 3. Fewer red grades rank higher
+                if (aRed !== bRed) {
+                    return aRed - bRed;
+                }
+                
+                // 4. More supergreen grades rank higher
+                if (aSuperGreen !== bSuperGreen) {
+                    return bSuperGreen - aSuperGreen;
+                }
+                
+                // 5. Higher total weight ranks higher
+                return bTotal - aTotal;
             });
-            
-            // Calculate weighted score for each agent
-            scoresData.forEach((row, idx) => {
-                let totalWeight = 0;
-                let totalScores = scoreColumns.length; // All 9 scores count
-                
-                scoreColumns.forEach(col => {
-                    const rawValue = parseFloat((row[col] || '').toString().replace('%', ''));
-                    
-                    // Check if score is grey or blank
-                    const colorCol = col + ' COLOR';
-                    const color = (row[colorCol] || '').toLowerCase().trim();
-                    
-                    // If grey, gray, blank, or invalid - contribute 0
-                    if (color === 'grey' || color === 'gray' || color === '' || isNaN(rawValue)) {
-                        totalWeight += 0;
-                        return;
-                    }
-                    
-                    let normalizedScore = 0;
-                    
-                    // Normalize based on the column type
-                    if (minMax[col]) {
-                        const { min, max } = minMax[col];
-                        const range = max - min;
-                        
-                        if (range > 0) {
-                            if (col === 'Phone AHT' || col === 'Net C/R per Ticket') {
-                                // Lower is better - invert the score
-                                normalizedScore = ((max - rawValue) / range) * 100;
-                            } else {
-                                // Higher is better
-                                normalizedScore = ((rawValue - min) / range) * 100;
-                            }
-                        } else {
-                            normalizedScore = 100; // If all values are the same
-                        }
-                    }
-                    
-                    totalWeight += normalizedScore;
-                });
-                
-                // Calculate average weight (divide by total number of metrics, not just valid ones)
-                row['Total Weight'] = (totalWeight / totalScores).toFixed(2);
-            });
-            
-            // Re-sort with Total Weight as final tie-breaker
-            scoresData.sort((a, b) => {
-                // First, agents with 4+ grey scores go to bottom
-                const aGrey4Plus = a._greyCount >= 4;
-                const bGrey4Plus = b._greyCount >= 4;
-                
-                if (aGrey4Plus && !bGrey4Plus) return 1;
-                if (!aGrey4Plus && bGrey4Plus) return -1;
-                
-                // Among agents with 4+ grey scores, rank by Total Weight (higher is better)
-                if (aGrey4Plus && bGrey4Plus) {
-                    const aTotalWeight = parseFloat(a['Total Weight']);
-                    const bTotalWeight = parseFloat(b['Total Weight']);
-                    return bTotalWeight - aTotalWeight;
-                }
-                
-                // Then sort by failed count (lower is better)
-                if (a._failedCount !== b._failedCount) {
-                    return a._failedCount - b._failedCount;
-                }
-                // If same failed count, sort by red count (lower is better)
-                if (a._redCount !== b._redCount) {
-                    return a._redCount - b._redCount;
-                }
-                // If same red count, sort by super green count (higher is better)
-                if (a._superGreenCount !== b._superGreenCount) {
-                    return b._superGreenCount - a._superGreenCount;
-                }
-                
-                // Final tie-breaker: Total Weight (higher is better)
-                const aTotalWeight = parseFloat(a['Total Weight']);
-                const bTotalWeight = parseFloat(b['Total Weight']);
-                return bTotalWeight - aTotalWeight;
-            });
-            
-            // Re-assign ranks after final sort
-            scoresData.forEach((row, index) => {
-                row['Rank'] = index + 1;
-            });
-            
-            // Separate color columns from regular columns
-            const colorColumns = {};
-            const filteredColumns = allColumns.filter(col => {
-                const lowerCol = col.toLowerCase();
-                
-                // Hide the old Upsell column
-                if (col === 'Upsell % Transferred (Tier II)') {
-                    return false;
-                }
-                
-                if (lowerCol.includes('count_aws')) {
-                    return false;
-                }
-                
-                if (lowerCol.includes('color')) {
-                    // Store mapping of score column to color column
-                    // Try multiple patterns to match score columns
-                    let scoreCol = col.replace(/_color$/i, '')
-                                     .replace(/_COLOR$/i, '')
-                                     .replace(/color$/i, '')
-                                     .replace(/COLOR$/i, '')
-                                     .replace(/ color$/i, '')
-                                     .replace(/ COLOR$/i, '')
-                                     .trim();
-                    colorColumns[scoreCol] = col;
-                    
-                    // Also map the new Upsell column to use the old Upsell color
-                    if (col === 'Upsell % Transferred (Tier II) COLOR') {
-                        colorColumns['Upsell % Transferred'] = col;
-                    }
-                    
-                    console.log('Color mapping:', scoreCol, '->', col);
-                    return false;
-                }
-                
-                return true;
-            });
-            
-            // Add the new columns to the list - Rank first, then Upsell at the end
-            filteredColumns.unshift('Rank');
-            filteredColumns.push('Upsell % Transferred');
-            
-            // Find the agent name column index and insert Total Weight after it
-            const agentColumnIndex = filteredColumns.findIndex(col => 
-                col === 'Agent' || col === 'agent' || col === 'AGENT' || 
-                col === 'Agent Name' || col === 'agent name' || col === 'AGENT NAME' ||
-                col === 'Name' || col === 'name' || col === 'NAME'
-            );
-            
-            if (agentColumnIndex !== -1) {
-                // Insert Total Weight right after the agent name column
-                filteredColumns.splice(agentColumnIndex + 1, 0, 'Total Weight');
-            } else {
-                // If no agent column found, insert after Rank
-                filteredColumns.splice(1, 0, 'Total Weight');
-            }
-            
-            console.log('All color mappings:', colorColumns);
-            console.log('Filtered columns:', filteredColumns);
 
-            updateTable(filteredColumns, colorColumns);
-        }
+            const tableHeader = document.getElementById('tableHeader');
+            const tableBody = document.getElementById('tableBody');
 
-        function updateTable(columns, colorColumns) {
-            const thead = document.getElementById('tableHead');
-            const tbody = document.getElementById('tableBody');
-            
-            thead.innerHTML = '';
-            tbody.innerHTML = '';
+            tableHeader.innerHTML = orderedHeaders.map(h => `<th>${h}</th>`).join('');
 
-            const headerRow = document.createElement('tr');
-            columns.forEach(col => {
-                const th = document.createElement('th');
-                th.textContent = col;
-                headerRow.appendChild(th);
-            });
-            thead.appendChild(headerRow);
-
-            scoresData.forEach(row => {
+            tableBody.innerHTML = '';
+            uniqueData.forEach((row, index) => {
                 const tr = document.createElement('tr');
-                columns.forEach(col => {
+                orderedHeaders.forEach(header => {
                     const td = document.createElement('td');
-                    td.textContent = row[col] !== undefined && row[col] !== null ? row[col] : '';
-                    
-                    // Make Total Weight text gray
-                    if (col === 'Total Weight') {
-                        td.style.color = '#999';
+                    if (header === 'Rank') {
+                        td.textContent = index + 1;
+                    } else if (header === 'Total Weighted Score') {
+                        td.className = 'total-score';
+                        td.textContent = row['__totalWeightedScore__'] || 'N/A';
+                    } else {
+                        td.textContent = row[header] !== null && row[header] !== undefined ? row[header] : '';
+                        
+                        // Apply background color if available
+                        if (colorMap[header] && row[colorMap[header]]) {
+                            let color = row[colorMap[header]].toLowerCase();
+                            
+                            // Convert bright colors to pastel
+                            const pastelColors = {
+                                'red': '#ffb3ba',
+                                'orange': '#ffd8b3',
+                                'yellow': '#ffffb3',
+                                'green': '#baffc9',
+                                'super green': '#8fd19e',
+                                'blue': '#bae1ff',
+                                'purple': '#e0b3ff',
+                                'pink': '#ffb3f0',
+                                'gray': '#e6e6e6',
+                                'grey': '#e6e6e6'
+                            };
+                            
+                            td.style.backgroundColor = pastelColors[color] || color;
+                        }
                     }
-                    
-                    // Apply color if this column has a corresponding color column
-                    if (colorColumns[col] && row[colorColumns[col]]) {
-                        const originalColor = row[colorColumns[col]].trim();
-                        const pastelColor = convertToPastel(originalColor);
-                        td.style.backgroundColor = pastelColor;
-                        td.style.fontWeight = 'bold';
-                        td.style.color = '#333';
-                    }
-                    
                     tr.appendChild(td);
                 });
-                tbody.appendChild(tr);
+                tableBody.appendChild(tr);
             });
-        }
 
-        function convertToPastel(color) {
-            const lowerColor = color.toLowerCase().trim();
-            
-            // Handle special color names first
-            const namedColorMap = {
-                'supergreen': '#90ee90',
-                'super green': '#90ee90',
-                'red': '#ffb3b3',
-                'green': '#b3ffb3',
-                'blue': '#b3b3ff',
-                'yellow': '#ffffb3',
-                'orange': '#ffd9b3',
-                'purple': '#e6b3ff',
-                'pink': '#ffb3e6',
-                'cyan': '#b3ffff',
-                'lime': '#d9ffb3',
-                'magenta': '#ffb3ff'
-            };
-            
-            if (namedColorMap[lowerColor]) {
-                return namedColorMap[lowerColor];
-            }
-            
-            // Handle hex colors
-            if (color.startsWith('#')) {
-                const hex = color.substring(1);
-                let r = parseInt(hex.substring(0, 2), 16);
-                let g = parseInt(hex.substring(2, 4), 16);
-                let b = parseInt(hex.substring(4, 6), 16);
-                
-                // Mix with white (255, 255, 255) to create pastel - 50% original, 50% white
-                r = Math.round(r * 0.5 + 255 * 0.5);
-                g = Math.round(g * 0.5 + 255 * 0.5);
-                b = Math.round(b * 0.5 + 255 * 0.5);
-                
-                return `rgb(${r}, ${g}, ${b})`;
-            }
-            
-            // Handle rgb/rgba colors
-            if (color.startsWith('rgb')) {
-                const matches = color.match(/\d+/g);
-                if (matches && matches.length >= 3) {
-                    let r = parseInt(matches[0]);
-                    let g = parseInt(matches[1]);
-                    let b = parseInt(matches[2]);
-                    
-                    r = Math.round(r * 0.5 + 255 * 0.5);
-                    g = Math.round(g * 0.5 + 255 * 0.5);
-                    b = Math.round(b * 0.5 + 255 * 0.5);
-                    
-                    return `rgb(${r}, ${g}, ${b})`;
-                }
-            }
-            
-            // Return original color if no match
-            return color;
-        }
-
-        function clearData() {
-            scoresData = [];
-            document.getElementById('csvFile').value = '';
-            document.getElementById('fileInfo').style.display = 'none';
-            document.getElementById('tableHead').innerHTML = '';
-            document.getElementById('tableBody').innerHTML = `
-                <tr>
-                    <td style="text-align: center; padding: 30px; color: #999;">
-                        No data available. Please upload a CSV file.
-                    </td>
-                </tr>
-            `;
+            document.getElementById('dashboard').classList.add('active');
         }
     </script>
 </body>
