@@ -225,9 +225,6 @@
             });
 
             const agentNameHeader = headers.find(h => h.toLowerCase().includes('agent') && h.toLowerCase().includes('name'));
-            const otherHeaders = headers.filter(h => h !== agentNameHeader && !h.includes('Weighted Score'));
-            const orderedHeaders = agentNameHeader ? ['Rank', agentNameHeader, 'Total Weighted Score', ...otherHeaders] : headers;
-
             const seenAgents = new Set();
             const uniqueData = data.filter(row => {
                 const agentName = row[agentNameHeader];
@@ -352,12 +349,32 @@
                 let totalScore = 0;
                 let validMetrics = 0;
                 
+                // Check if call counts are zero
+                const tier12Count = row['count_aws_calls_handled_customer_tier1&2'] || 0;
+                const tier3Count = row['count_aws_calls_handled_customer_tier3'] || 0;
+                const totalCallCount = tier12Count + tier3Count;
+                
                 Object.keys(metricsToStandardize).forEach(metric => {
-                    if (standardizedScores[metric] && standardizedScores[metric][idx] !== null) {
+                    // Check if this metric has a grey color (no score)
+                    const colorCol = colorMap[metric];
+                    const isGrey = colorCol && row[colorCol] && (row[colorCol].toLowerCase() === 'grey' || row[colorCol].toLowerCase() === 'gray');
+                    
+                    // Check if this metric should be zero due to no calls
+                    let shouldBeZero = false;
+                    if ((metric === 'Net C/R per Ticket' || metric === 'Phone AHT') && totalCallCount === 0) {
+                        shouldBeZero = true;
+                    }
+                    
+                    if (shouldBeZero) {
+                        row[`${metric} - Weighted Score`] = '0';
+                    } else if (standardizedScores[metric] && standardizedScores[metric][idx] !== null && !isGrey) {
                         const score = standardizedScores[metric][idx];
                         row[`${metric} - Weighted Score`] = score.toFixed(2);
                         totalScore += score;
                         validMetrics++;
+                    } else if (isGrey) {
+                        // Grey score = 0 weight, don't include in average
+                        row[`${metric} - Weighted Score`] = '0';
                     }
                 });
                 
@@ -430,6 +447,9 @@
                 // 5. Higher total weight ranks higher
                 return bTotal - aTotal;
             });
+
+            const otherHeaders = headers.filter(h => h !== agentNameHeader && !h.includes('Weighted Score'));
+            const orderedHeaders = agentNameHeader ? ['Rank', agentNameHeader, 'Total Weighted Score', ...otherHeaders] : headers;
 
             const tableHeader = document.getElementById('tableHeader');
             const tableBody = document.getElementById('tableBody');
